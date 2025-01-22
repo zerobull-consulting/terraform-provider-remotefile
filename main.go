@@ -5,9 +5,9 @@
 package main
 
 import (
-	"github.com/danitso/terraform-provider-sftp/sftptf"
 	"github.com/hashicorp/terraform-plugin-sdk/plugin"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/zerobull-consulting/terraform-provider-sftp/sftptf"
 )
 
 func main() {
