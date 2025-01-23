@@ -3,10 +3,8 @@ package provider
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -133,12 +131,6 @@ func (d *remoteFileDataSource) Schema(_ context.Context, _ datasource.SchemaRequ
 
 func withRetry(retryCount int64, retryInterval time.Duration, operation func() error) error {
 	var lastErr error
-	retriableErrors := []string{
-		"failed to connect to SSH server",
-		"Error reading remote file info",
-		"Error opening remote file",
-		"Error reading remote file contents",
-	}
 
 	for i := int64(0); i <= retryCount; i++ {
 		err := operation()
@@ -147,15 +139,8 @@ func withRetry(retryCount int64, retryInterval time.Duration, operation func() e
 		}
 
 		lastErr = err
-		isRetriable := false
-		for _, retriableErr := range retriableErrors {
-			if strings.Contains(err.Error(), retriableErr) {
-				isRetriable = true
-				break
-			}
-		}
 
-		if !isRetriable || i == retryCount {
+		if i == retryCount {
 			return lastErr
 		}
 
@@ -163,63 +148,6 @@ func withRetry(retryCount int64, retryInterval time.Duration, operation func() e
 	}
 
 	return lastErr
-}
-
-func createSSHClient(data *remoteFileDataSourceModel) (*ssh.Client, error) {
-	if data.Password.IsNull() && data.PrivateKey.IsNull() {
-		return nil, errors.New("no password or private key has been specified")
-	}
-
-	var authMethod []ssh.AuthMethod
-
-	if !data.Password.IsNull() {
-		authMethod = []ssh.AuthMethod{ssh.Password(data.Password.ValueString())}
-	} else {
-		privateKeySigner, err := ssh.ParsePrivateKey([]byte(data.PrivateKey.ValueString()))
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse private key: %w", err)
-		}
-		authMethod = []ssh.AuthMethod{ssh.PublicKeys(privateKeySigner)}
-	}
-
-	var hostKeyCallback ssh.HostKeyCallback
-	if !data.HostKey.IsNull() {
-		parsedHostKey, err := ssh.ParsePublicKey([]byte(data.HostKey.ValueString()))
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse host key: %w", err)
-		}
-		hostKeyCallback = ssh.FixedHostKey(parsedHostKey)
-	} else {
-		hostKeyCallback = ssh.InsecureIgnoreHostKey()
-	}
-
-	timeout := "5m"
-	if !data.Timeout.IsNull() {
-		timeout = data.Timeout.ValueString()
-	}
-	timeoutDuration, err := time.ParseDuration(timeout)
-	if err != nil {
-		return nil, fmt.Errorf("invalid timeout duration: %w", err)
-	}
-
-	port := int64(22)
-	if !data.Port.IsNull() {
-		port = data.Port.ValueInt64()
-	}
-
-	sshConfig := &ssh.ClientConfig{
-		User:            data.User.ValueString(),
-		Auth:            authMethod,
-		HostKeyCallback: hostKeyCallback,
-		Timeout:         timeoutDuration,
-	}
-
-	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", data.Host.ValueString(), port), sshConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to SSH server: %w", err)
-	}
-
-	return client, nil
 }
 
 // Read refreshes the Terraform state with the latest data.
@@ -243,27 +171,35 @@ func (d *remoteFileDataSource) Read(ctx context.Context, req datasource.ReadRequ
 		interval, err := time.ParseDuration(data.RetryInterval.ValueString())
 		if err != nil {
 			resp.Diagnostics.AddError(
-				"Invalid retry interval",
-				fmt.Sprintf("Unable to parse retry interval: %s", err),
+				"invalid retry interval",
+				fmt.Sprintf("enable to parse retry interval: %s", err),
 			)
 			return
 		}
 		retryInterval = interval
 	}
 
+	sshConnParams, err := createSSHConnectionParameters(&data)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"error creating SSH connection parameters",
+			err.Error(),
+		)
+		return
+	}
+
 	// Wrap the entire operation in the retry logic
-	err := withRetry(retryCount, retryInterval, func() error {
-		// Create SSH client
-		sshClient, err := createSSHClient(&data)
+	err = withRetry(retryCount, retryInterval, func() error {
+		sshClient, err := ssh.Dial("tcp", sshConnParams.address, sshConnParams.sshConfig)
 		if err != nil {
-			return fmt.Errorf("Error creating SSH client: %w", err)
+			return fmt.Errorf("failed to connect to SSH server: %w", err)
 		}
 		defer sshClient.Close()
 
 		// Create SFTP client
 		sftpClient, err := sftp.NewClient(sshClient)
 		if err != nil {
-			return fmt.Errorf("Error creating SFTP client: %w", err)
+			return fmt.Errorf("error creating SFTP client: %w", err)
 		}
 		defer sftpClient.Close()
 
@@ -277,19 +213,19 @@ func (d *remoteFileDataSource) Read(ctx context.Context, req datasource.ReadRequ
 				data.Size = types.Int64Value(-1)
 				return nil
 			}
-			return fmt.Errorf("Error reading remote file info: %w", err)
+			return fmt.Errorf("error reading remote file info: %w", err)
 		}
 
 		remoteFile, err := sftpClient.Open(data.Path.ValueString())
 		if err != nil {
-			return fmt.Errorf("Error opening remote file: %w", err)
+			return fmt.Errorf("error opening remote file: %w", err)
 		}
 		defer remoteFile.Close()
 
 		buffer := bytes.NewBuffer(nil)
 		_, err = io.Copy(buffer, remoteFile)
 		if err != nil {
-			return fmt.Errorf("Error reading remote file contents: %w", err)
+			return fmt.Errorf("error reading remote file contents: %w", err)
 		}
 
 		// Set model values
@@ -303,7 +239,7 @@ func (d *remoteFileDataSource) Read(ctx context.Context, req datasource.ReadRequ
 
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error reading remote file",
+			"error reading remote file",
 			err.Error(),
 		)
 		return
