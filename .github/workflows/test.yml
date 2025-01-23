@@ -1,19 +1,15 @@
 name: Test changes
 on:
   pull_request:
-    branches:
-      - main
-      - 'v*'
+    types: [opened, synchronize, reopened, edited]
 jobs:
   test:
     name: Pull Request
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       -
         name: Checkout the code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v4
       -
         name: Install and configure Go
         uses: actions/setup-go@v2
@@ -23,7 +19,3 @@ jobs:
         name: Run tests
         run: |
           go test -v ./...
-      -
-        name: Create snapshot
-        run: |
-          goreleaser build --parallelism 2 --rm-dist --snapshot --timeout 1h
