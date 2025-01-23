@@ -3,7 +3,6 @@ on:
   pull_request:
     branches:
       - main
-      - master
       - 'v*'
 jobs:
   test:
@@ -19,15 +18,11 @@ jobs:
         name: Install and configure Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.15
+          go-version: 1.22.7
       -
-        name: Install and configure GoReleaser
-        env:
-          GORELEASER_VERSION: '0.155.1'
+        name: Run tests
         run: |
-          curl -sL -o goreleaser_amd64.deb "https://github.com/goreleaser/goreleaser/releases/download/v${GORELEASER_VERSION}/goreleaser_amd64.deb"
-          sudo dpkg -i goreleaser_amd64.deb
-          rm -f goreleaser_amd64.deb
+          go test -v ./...
       -
         name: Create snapshot
         run: |
