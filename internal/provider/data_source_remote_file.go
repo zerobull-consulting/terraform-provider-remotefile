@@ -12,6 +12,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
+
+	"github.com/zerobull-consulting/terraform-provider-sftp/internal/provider/model"
+	"github.com/zerobull-consulting/terraform-provider-sftp/internal/provider/ssh/connection/parameters"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -26,26 +29,6 @@ func NewRemoteFileDataSource() datasource.DataSource {
 
 // remoteFileDataSource is the data source implementation.
 type remoteFileDataSource struct{}
-
-// remoteFileDataSourceModel maps the data source schema data.
-type remoteFileDataSourceModel struct {
-	AllowMissing  types.Bool   `tfsdk:"allow_missing"`
-	Contents      types.String `tfsdk:"contents"`
-	Host          types.String `tfsdk:"host"`
-	HostKey       types.String `tfsdk:"host_key"`
-	LastModified  types.String `tfsdk:"last_modified"`
-	Password      types.String `tfsdk:"password"`
-	Path          types.String `tfsdk:"path"`
-	Port          types.Int64  `tfsdk:"port"`
-	PrivateKey    types.String `tfsdk:"private_key"`
-	Size          types.Int64  `tfsdk:"size"`
-	Timeout       types.String `tfsdk:"timeout"`
-	Triggers      types.Map    `tfsdk:"triggers"`
-	User          types.String `tfsdk:"user"`
-	ID            types.String `tfsdk:"id"`
-	RetryCount    types.Int64  `tfsdk:"retry_count"`
-	RetryInterval types.String `tfsdk:"retry_interval"`
-}
 
 // Metadata returns the data source type name.
 func (d *remoteFileDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -71,7 +54,7 @@ func (d *remoteFileDataSource) Schema(_ context.Context, _ datasource.SchemaRequ
 				Required:    true,
 			},
 			"host_key": schema.StringAttribute{
-				Description: "The host key",
+				Description: "If set, the host key to verify against",
 				Optional:    true,
 			},
 			"last_modified": schema.StringAttribute{
@@ -92,7 +75,7 @@ func (d *remoteFileDataSource) Schema(_ context.Context, _ datasource.SchemaRequ
 				Optional:    true,
 			},
 			"private_key": schema.StringAttribute{
-				Description: "The private key",
+				Description: "The private key for connecting, PEM format (-----BEGIN OPENSSH PRIVATE KEY-----)",
 				Optional:    true,
 				Sensitive:   true,
 			},
@@ -152,7 +135,7 @@ func withRetry(retryCount int64, retryInterval time.Duration, operation func() e
 
 // Read refreshes the Terraform state with the latest data.
 func (d *remoteFileDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data remoteFileDataSourceModel
+	var data model.RemoteFileDataSourceModel
 
 	// Read Terraform configuration data into the model
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -179,7 +162,7 @@ func (d *remoteFileDataSource) Read(ctx context.Context, req datasource.ReadRequ
 		retryInterval = interval
 	}
 
-	sshConnParams, err := createSSHConnectionParameters(&data)
+	sshConnParams, err := parameters.CreateSSHConnectionParameters(&data)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error creating SSH connection parameters",
@@ -190,7 +173,7 @@ func (d *remoteFileDataSource) Read(ctx context.Context, req datasource.ReadRequ
 
 	// Wrap the entire operation in the retry logic
 	err = withRetry(retryCount, retryInterval, func() error {
-		sshClient, err := ssh.Dial("tcp", sshConnParams.address, sshConnParams.sshConfig)
+		sshClient, err := ssh.Dial("tcp", sshConnParams.Address, sshConnParams.SshConfig)
 		if err != nil {
 			return fmt.Errorf("failed to connect to SSH server: %w", err)
 		}
