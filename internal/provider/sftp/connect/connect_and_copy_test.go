@@ -17,7 +17,6 @@ import (
 )
 
 type testServer struct {
-	sftpServer     *sftp.Server
 	sshServer      *ssh.ServerConfig
 	listener       net.Listener
 	testDir        string
