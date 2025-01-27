@@ -273,12 +273,10 @@ func TestConnectAndCopyOperation_ExistingFile(t *testing.T) {
 	t.Logf("Test server directory: %s", server.testDir)
 	t.Logf("Attempting to access file: %s", input.path.ValueString())
 
-	operation := connectAndCopyOperationWithDeps(
+	operation := ConnectAndCopy(
 		sshParams,
 		input,
 		output,
-		&realSSHDialer{},
-		&realSFTPCreator{},
 	)
 
 	err := operation()
@@ -313,12 +311,10 @@ func TestConnectAndCopyOperation_MissingFileAllowed(t *testing.T) {
 		address: serverAddr,
 	}
 
-	operation := connectAndCopyOperationWithDeps(
+	operation := ConnectAndCopy(
 		sshParams,
 		input,
 		output,
-		&realSSHDialer{},
-		&realSFTPCreator{},
 	)
 
 	err := operation()
@@ -353,29 +349,14 @@ func TestConnectAndCopyOperation_MissingFileNotAllowed(t *testing.T) {
 		address: serverAddr,
 	}
 
-	operation := connectAndCopyOperationWithDeps(
+	operation := ConnectAndCopy(
 		sshParams,
 		input,
 		output,
-		&realSSHDialer{},
-		&realSFTPCreator{},
 	)
 
 	err := operation()
 	if err == nil {
 		t.Error("ConnectAndCopyOperation() expected error for missing file, got nil")
 	}
-}
-
-// Real implementations for SSH and SFTP
-type realSSHDialer struct{}
-
-func (r *realSSHDialer) Dial(network, addr string, config *ssh.ClientConfig) (*ssh.Client, error) {
-	return ssh.Dial(network, addr, config)
-}
-
-type realSFTPCreator struct{}
-
-func (r *realSFTPCreator) NewClient(conn *ssh.Client) (*sftp.Client, error) {
-	return sftp.NewClient(conn)
 }
