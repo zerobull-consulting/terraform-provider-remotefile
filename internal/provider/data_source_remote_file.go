@@ -1,20 +1,18 @@
 package provider
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/pkg/sftp"
-	"golang.org/x/crypto/ssh"
 
 	"github.com/zerobull-consulting/terraform-provider-sftp/internal/provider/model"
-	"github.com/zerobull-consulting/terraform-provider-sftp/internal/provider/ssh/connection/parameters"
+	"github.com/zerobull-consulting/terraform-provider-sftp/internal/provider/retry"
+	"github.com/zerobull-consulting/terraform-provider-sftp/internal/provider/sftp/connect"
+	"github.com/zerobull-consulting/terraform-provider-sftp/internal/provider/sftp/parameters"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -112,27 +110,6 @@ func (d *remoteFileDataSource) Schema(_ context.Context, _ datasource.SchemaRequ
 	}
 }
 
-func withRetry(retryCount int64, retryInterval time.Duration, operation func() error) error {
-	var lastErr error
-
-	for i := int64(0); i <= retryCount; i++ {
-		err := operation()
-		if err == nil {
-			return nil
-		}
-
-		lastErr = err
-
-		if i == retryCount {
-			return lastErr
-		}
-
-		time.Sleep(retryInterval)
-	}
-
-	return lastErr
-}
-
 // Read refreshes the Terraform state with the latest data.
 func (d *remoteFileDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data model.RemoteFileDataSourceModel
@@ -171,54 +148,10 @@ func (d *remoteFileDataSource) Read(ctx context.Context, req datasource.ReadRequ
 		return
 	}
 
+	operation := connect.ConnectAndCopy(sshConnParams, &data, &data)
+
 	// Wrap the entire operation in the retry logic
-	err = withRetry(retryCount, retryInterval, func() error {
-		sshClient, err := ssh.Dial("tcp", sshConnParams.Address, sshConnParams.SshConfig)
-		if err != nil {
-			return fmt.Errorf("failed to connect to SSH server: %w", err)
-		}
-		defer sshClient.Close()
-
-		// Create SFTP client
-		sftpClient, err := sftp.NewClient(sshClient)
-		if err != nil {
-			return fmt.Errorf("error creating SFTP client: %w", err)
-		}
-		defer sftpClient.Close()
-
-		// Get file info and contents
-		fileInfo, err := sftpClient.Lstat(data.Path.ValueString())
-		if err != nil {
-			if data.AllowMissing.ValueBool() {
-				data.ID = types.StringValue("missing")
-				data.Contents = types.StringValue("")
-				data.LastModified = types.StringValue(time.Now().Format(time.RFC3339))
-				data.Size = types.Int64Value(-1)
-				return nil
-			}
-			return fmt.Errorf("error reading remote file info: %w", err)
-		}
-
-		remoteFile, err := sftpClient.Open(data.Path.ValueString())
-		if err != nil {
-			return fmt.Errorf("error opening remote file: %w", err)
-		}
-		defer remoteFile.Close()
-
-		buffer := bytes.NewBuffer(nil)
-		_, err = io.Copy(buffer, remoteFile)
-		if err != nil {
-			return fmt.Errorf("error reading remote file contents: %w", err)
-		}
-
-		// Set model values
-		data.ID = types.StringValue(fileInfo.Name())
-		data.Contents = types.StringValue(buffer.String())
-		data.LastModified = types.StringValue(fileInfo.ModTime().Format(time.RFC3339))
-		data.Size = types.Int64Value(fileInfo.Size())
-
-		return nil
-	})
+	err = retry.WithRetry(retryCount, retryInterval, operation)
 
 	if err != nil {
 		resp.Diagnostics.AddError(

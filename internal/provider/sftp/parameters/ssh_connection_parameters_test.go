@@ -135,14 +135,14 @@ func TestPasswordConfigCreated(t *testing.T) {
 		t.Error("expected connection parameters to be created")
 		return
 	}
-	if params.Address != "host:22" {
-		t.Errorf("unexpected address: %s", params.Address)
+	if params.address != "host:22" {
+		t.Errorf("unexpected address: %s", params.address)
 	}
-	if params.SshConfig.User != "user" {
-		t.Errorf("unexpected user: %s", params.SshConfig.User)
+	if params.sshConfig.User != "user" {
+		t.Errorf("unexpected user: %s", params.sshConfig.User)
 	}
-	if len(params.SshConfig.Auth) != 1 {
-		t.Errorf("unexpected number of auth methods: %d", len(params.SshConfig.Auth))
+	if len(params.sshConfig.Auth) != 1 {
+		t.Errorf("unexpected number of auth methods: %d", len(params.sshConfig.Auth))
 	}
 }
 
@@ -173,14 +173,14 @@ Vsb3BtZW50AQIDBA==
 		t.Error("expected connection parameters to be created")
 		return
 	}
-	if params.Address != "host:22" {
-		t.Errorf("unexpected address: %s", params.Address)
+	if params.address != "host:22" {
+		t.Errorf("unexpected address: %s", params.address)
 	}
-	if params.SshConfig.User != "user" {
-		t.Errorf("unexpected user: %s", params.SshConfig.User)
+	if params.sshConfig.User != "user" {
+		t.Errorf("unexpected user: %s", params.sshConfig.User)
 	}
-	if len(params.SshConfig.Auth) != 1 {
-		t.Errorf("unexpected number of auth methods: %d", len(params.SshConfig.Auth))
+	if len(params.sshConfig.Auth) != 1 {
+		t.Errorf("unexpected number of auth methods: %d", len(params.sshConfig.Auth))
 	}
 }
 
@@ -202,8 +202,8 @@ func TestTimeoutSupplied(t *testing.T) {
 		t.Error("expected connection parameters to be created")
 		return
 	}
-	if params.SshConfig.Timeout != time.Minute*2 {
-		t.Errorf("unexpected timeout: %v", params.SshConfig.Timeout)
+	if params.sshConfig.Timeout != time.Minute*2 {
+		t.Errorf("unexpected timeout: %v", params.sshConfig.Timeout)
 	}
 }
 
@@ -225,8 +225,8 @@ func TestPortSupplied(t *testing.T) {
 		t.Error("expected connection parameters to be created")
 		return
 	}
-	if params.Address != "host:2222" {
-		t.Errorf("unexpected address: %s", params.Address)
+	if params.address != "host:2222" {
+		t.Errorf("unexpected address: %s", params.address)
 	}
 }
 
@@ -253,7 +253,7 @@ func TestHostKeySupplied(t *testing.T) {
 		t.Error("expected connection parameters to be created")
 		return
 	}
-	if params.SshConfig.HostKeyCallback == nil {
+	if params.sshConfig.HostKeyCallback == nil {
 		t.Error("expected host key callback to be set")
 	}
 }
@@ -289,19 +289,19 @@ Vsb3BtZW50AQIDBA==
 		t.Error("expected connection parameters to be created")
 		return
 	}
-	if params.Address != "host:2222" {
-		t.Errorf("unexpected address: %s", params.Address)
+	if params.address != "host:2222" {
+		t.Errorf("unexpected address: %s", params.address)
 	}
-	if params.SshConfig.User != "ubuntu" {
-		t.Errorf("unexpected user: %s", params.SshConfig.User)
+	if params.sshConfig.User != "ubuntu" {
+		t.Errorf("unexpected user: %s", params.sshConfig.User)
 	}
-	if len(params.SshConfig.Auth) != 1 {
-		t.Errorf("unexpected number of auth methods: %d", len(params.SshConfig.Auth))
+	if len(params.sshConfig.Auth) != 1 {
+		t.Errorf("unexpected number of auth methods: %d", len(params.sshConfig.Auth))
 	}
-	if params.SshConfig.Timeout != time.Minute*2 {
-		t.Errorf("unexpected timeout: %v", params.SshConfig.Timeout)
+	if params.sshConfig.Timeout != time.Minute*2 {
+		t.Errorf("unexpected timeout: %v", params.sshConfig.Timeout)
 	}
-	if params.SshConfig.HostKeyCallback == nil {
+	if params.sshConfig.HostKeyCallback == nil {
 		t.Error("expected host key callback to be set")
 	}
 }

@@ -9,11 +9,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-type SshConnectionParameters struct {
-	SshConfig *ssh.ClientConfig
-	Address   string
-}
-
+// the subset of terraform schema fields that are needed to create an SSH connection
 type SshModelSubset interface {
 	GetHost() types.String
 	GetHostKey() types.String
@@ -76,7 +72,7 @@ func CreateSSHConnectionParameters(data SshModelSubset) (*SshConnectionParameter
 	address := fmt.Sprintf("%s:%d", data.GetHost().ValueString(), port)
 
 	return &SshConnectionParameters{
-		SshConfig: sshConfig,
-		Address:   address,
+		sshConfig: sshConfig,
+		address:   address,
 	}, nil
 }
