@@ -37,3 +37,20 @@ func (r *RemoteFileDataSourceModel) GetUser() types.String          { return r.U
 func (r *RemoteFileDataSourceModel) GetID() types.String            { return r.ID }
 func (r *RemoteFileDataSourceModel) GetRetryCount() types.Int64     { return r.RetryCount }
 func (r *RemoteFileDataSourceModel) GetRetryInterval() types.String { return r.RetryInterval }
+
+// write methods to set ID, Contents, LastModified, Size
+func (r *RemoteFileDataSourceModel) SetID(id types.String) {
+	r.ID = id
+}
+
+func (r *RemoteFileDataSourceModel) SetContents(contents types.String) {
+	r.Contents = contents
+}
+
+func (r *RemoteFileDataSourceModel) SetLastModified(lastModified types.String) {
+	r.LastModified = lastModified
+}
+
+func (r *RemoteFileDataSourceModel) SetSize(size types.Int64) {
+	r.Size = size
+}
