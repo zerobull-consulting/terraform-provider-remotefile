@@ -304,7 +304,7 @@ func TestConnectAndCopyOperation_MissingFileAllowed(t *testing.T) {
 	defer cleanup()
 
 	input := &mockInputModel{
-		path:         types.StringValue("/missing.txt"),
+		path:         types.StringValue("missing.txt"),
 		allowMissing: types.BoolValue(true),
 	}
 	output := &mockOutputModel{}
@@ -344,7 +344,7 @@ func TestConnectAndCopyOperation_MissingFileNotAllowed(t *testing.T) {
 	defer cleanup()
 
 	input := &mockInputModel{
-		path:         types.StringValue("/missing.txt"),
+		path:         types.StringValue("missing.txt"),
 		allowMissing: types.BoolValue(false),
 	}
 	output := &mockOutputModel{}
