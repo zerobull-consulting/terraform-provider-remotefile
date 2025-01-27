@@ -228,22 +228,26 @@ func getTestClientConfig(hostKey ssh.PublicKey) *ssh.ClientConfig {
 
 // setupIntegrationTest prepares the test environment and returns cleanup function
 func setupIntegrationTest(t *testing.T) (*testServer, string, string, func()) {
+	t.Helper()
+
 	server, err := setupTestServer(t)
 	if err != nil {
 		t.Fatalf("Failed to setup test server: %v", err)
 	}
-
 	serverAddr := server.listener.Addr().String()
 
-	// Create test file
+	// Create test file without leading slash - this will be relative to testDir
 	testContent := "test content\n"
 	testFilePath := filepath.Join(server.testDir, "test.txt")
+
+	t.Logf("Creating test file at: %s", testFilePath)
 	err = os.WriteFile(testFilePath, []byte(testContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
 	cleanup := func() {
+		t.Logf("Cleaning up test server and directory: %s", server.testDir)
 		server.cleanup()
 	}
 
@@ -254,15 +258,20 @@ func TestConnectAndCopyOperation_ExistingFile(t *testing.T) {
 	server, serverAddr, testContent, cleanup := setupIntegrationTest(t)
 	defer cleanup()
 
+	// Use "test.txt" without leading slash - the path should be relative to SFTP root
 	input := &mockInputModel{
-		path:         types.StringValue("/test.txt"),
+		path:         types.StringValue("test.txt"),
 		allowMissing: types.BoolValue(false),
 	}
+
 	output := &mockOutputModel{}
 	sshParams := &mockSSHParams{
 		config:  getTestClientConfig(server.hostPrivateKey.PublicKey()),
 		address: serverAddr,
 	}
+
+	t.Logf("Test server directory: %s", server.testDir)
+	t.Logf("Attempting to access file: %s", input.path.ValueString())
 
 	operation := connectAndCopyOperationWithDeps(
 		sshParams,
