@@ -22,9 +22,9 @@ import (
 type Pipelines struct{}
 
 var dotenvVersionTag = "v1.34.0"
+var dotenvImage = "dotenv/dotenvx:" + dotenvVersionTag
 
 func (m *Pipelines) dotenvxBinary() *dagger.File {
-	dotenvImage := "dotenv/dotenvx:" + dotenvVersionTag
 	return dag.Container().From(dotenvImage).File("/usr/local/bin/dotenvx")
 }
 
@@ -35,8 +35,27 @@ func (m *Pipelines) goreleaserBinary() *dagger.File {
 	return dag.Container().From(goreleaserImage).File("/usr/bin/goreleaser")
 }
 
+func (m *Pipelines) gpgSecretKey(ctx context.Context, dotenvEncryptedEnvFile *dagger.File, dotenvKey *dagger.Secret) *dagger.Secret {
+	// need to run dotenvx and capture the output as a secret
+
+	// for time-savings we use the same image as the dotenv binary
+	key, err := dag.Container().From(dotenvImage).
+		WithWorkdir("/source").
+		WithFile("/source/.env", dotenvEncryptedEnvFile).
+		WithSecretVariable("DOTENV_PRIVATE_KEY", dotenvKey).
+		WithExec([]string{"dotenvx", "get", "GPG_SECRET_KEY"}).
+		Stdout(ctx)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return dag.SetSecret("GPG_SECRET_KEY", key)
+}
+
 func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, dotenvKey *dagger.Secret) (int, error) {
 	sourceWithoutBin := source.WithoutDirectory("bin").WithoutDirectory("dist")
+	gpgKey := m.gpgSecretKey(ctx, source.File(".env"), dotenvKey)
 
 	return dag.Container().
 		From("golang:1.23-alpine").
@@ -52,6 +71,10 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 
 		// set the dotenv private key (needed to decrypt .env file)
 		WithSecretVariable("DOTENV_PRIVATE_KEY", dotenvKey).
+
+		// import the GPG key
+		WithMountedSecret("/keys/release-signing-key.asc", gpgKey).
+		WithExec([]string{"gpg", "--import", "/keys/release-signing-key.asc"}).
 
 		// mount source and run goreleaser
 		WithDirectory("/source", sourceWithoutBin).
