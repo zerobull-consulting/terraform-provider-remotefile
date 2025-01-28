@@ -57,8 +57,8 @@ func (m *Pipelines) gpgSecretKey(ctx context.Context, dotenvEncryptedEnvFile *da
 func (m *Pipelines) GpgAgentService(ctx context.Context) *dagger.Service {
 	return dag.Container().From("alpine:3.21").
 		WithExec([]string{"apk", "add", "gnupg", "openssh"}).
-		WithExec([]string{"ssh-keygen", "-b", "2048", "-t", "rsa", "-f", "/etc/ssh/ssh_host_rsa_key", "-q", "-N", "\"\""}).
-		WithExposedPort(22).AsService()
+		WithExec([]string{"ssh-keygen", "-t", "rsa", "-f", "/etc/ssh/ssh_host_rsa_key"}).
+		WithExposedPort(22).AsService(dagger.ContainerAsServiceOpts{Args: []string{"/usr/sbin/sshd", "-D"}})
 }
 
 func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, dotenvKey *dagger.Secret) (int, error) {
@@ -84,7 +84,6 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 
 		// add a service for the GPG agent
 		WithServiceBinding("gpg-agent", gpgService).
-		WithFile("/root/.ssh/config", source.File("id_rsa")).
 
 		// Import the GPG key
 		WithMountedSecret("/keys/release-signing-key.asc", gpgKey).

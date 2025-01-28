@@ -5,13 +5,15 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/resource"
-	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 	"go.opentelemetry.io/otel/trace"
 
 	"dagger/infra/internal/dagger"
@@ -77,12 +79,19 @@ func main() {
 	})))
 
 	if err := dispatch(ctx); err != nil {
-		fmt.Println(err.Error())
 		os.Exit(2)
 	}
 }
 
-func dispatch(ctx context.Context) error {
+func unwrapError(rerr error) string {
+	var gqlErr *gqlerror.Error
+	if errors.As(rerr, &gqlErr) {
+		return gqlErr.Message
+	}
+	return rerr.Error()
+}
+
+func dispatch(ctx context.Context) (rerr error) {
 	ctx = telemetry.InitEmbedded(ctx, resource.NewWithAttributes(
 		semconv.SchemaURL,
 		semconv.ServiceNameKey.String("dagger-go-sdk"),
@@ -96,6 +105,14 @@ func dispatch(ctx context.Context) error {
 	setMarshalContext(ctx)
 
 	fnCall := dag.CurrentFunctionCall()
+	defer func() {
+		if rerr != nil {
+			if err := fnCall.ReturnError(ctx, dag.Error(unwrapError(rerr))); err != nil {
+				fmt.Println("failed to return error:", err)
+			}
+		}
+	}()
+
 	parentName, err := fnCall.ParentName(ctx)
 	if err != nil {
 		return fmt.Errorf("get parent name: %w", err)
@@ -128,13 +145,18 @@ func dispatch(ctx context.Context) error {
 
 	result, err := invoke(ctx, []byte(parentJson), parentName, fnName, inputArgs)
 	if err != nil {
-		return fmt.Errorf("invoke: %w", err)
+		var exec *dagger.ExecError
+		if errors.As(err, &exec) {
+			return exec.Unwrap()
+		}
+		return err
 	}
 	resultBytes, err := json.Marshal(result)
 	if err != nil {
 		return fmt.Errorf("marshal: %w", err)
 	}
-	if err = fnCall.ReturnValue(ctx, dagger.JSON(resultBytes)); err != nil {
+
+	if err := fnCall.ReturnValue(ctx, dagger.JSON(resultBytes)); err != nil {
 		return fmt.Errorf("store return value: %w", err)
 	}
 	return nil
@@ -144,6 +166,13 @@ func invoke(ctx context.Context, parentJSON []byte, parentName string, fnName st
 	switch parentName {
 	case "Pipelines":
 		switch fnName {
+		case "GpgAgentService":
+			var parent Pipelines
+			err = json.Unmarshal(parentJSON, &parent)
+			if err != nil {
+				panic(fmt.Errorf("%s: %w", "failed to unmarshal parent object", err))
+			}
+			return (*Pipelines).GpgAgentService(&parent, ctx), nil
 		case "Release":
 			var parent Pipelines
 			err = json.Unmarshal(parentJSON, &parent)
@@ -172,13 +201,18 @@ func invoke(ctx context.Context, parentJSON []byte, parentName string, fnName st
 		return dag.Module().
 			WithDescription("A generated module for Infra functions\n\nThis module has been generated via dagger init and serves as a reference to\nbasic module structure as you get started with Dagger.\n\nTwo functions have been pre-created. You can modify, delete, or add to them,\nas needed. They demonstrate usage of arguments and return types using simple\necho and grep commands. The functions can be called from the dagger CLI or\nfrom one of the SDKs.\n\nThe first line in this comment block is a short description line and the\nrest is a long description with more detail on the module's purpose or usage,\nif appropriate. All modules should have a short description.\n").
 			WithObject(
-				dag.TypeDef().WithObject("Pipelines", dagger.TypeDefWithObjectOpts{SourceMap: dag.SourceMap("main.go", 22, 6)}).
+				dag.TypeDef().WithObject("Pipelines", dagger.TypeDefWithObjectOpts{SourceMap: dag.SourceMap("release.go", 22, 6)}).
+					WithFunction(
+						dag.Function("GpgAgentService",
+							dag.TypeDef().WithObject("Service")).
+							WithDescription("have a remote GPG Agent running and available as a service").
+							WithSourceMap(dag.SourceMap("release.go", 57, 1))).
 					WithFunction(
 						dag.Function("Release",
 							dag.TypeDef().WithKind(dagger.TypeDefKindIntegerKind)).
-							WithSourceMap(dag.SourceMap("main.go", 31, 1)).
-							WithArg("source", dag.TypeDef().WithObject("Directory"), dagger.FunctionWithArgOpts{SourceMap: dag.SourceMap("main.go", 31, 50)}).
-							WithArg("dotenvKey", dag.TypeDef().WithObject("Secret"), dagger.FunctionWithArgOpts{SourceMap: dag.SourceMap("main.go", 31, 76)}))), nil
+							WithSourceMap(dag.SourceMap("release.go", 64, 1)).
+							WithArg("source", dag.TypeDef().WithObject("Directory"), dagger.FunctionWithArgOpts{SourceMap: dag.SourceMap("release.go", 64, 50)}).
+							WithArg("dotenvKey", dag.TypeDef().WithObject("Secret"), dagger.FunctionWithArgOpts{SourceMap: dag.SourceMap("release.go", 64, 76)}))), nil
 	default:
 		return nil, fmt.Errorf("unknown object %s", parentName)
 	}
