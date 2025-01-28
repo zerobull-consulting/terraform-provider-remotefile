@@ -87,6 +87,9 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 		// mount source and run goreleaser
 		WithDirectory("/source", sourceWithoutBin).
 		WithWorkdir("/source").
+		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "build"}).
+		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "archive"}).
+		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "sign"}).
 		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "release"}).
 		ExitCode(ctx)
 }
