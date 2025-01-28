@@ -53,14 +53,6 @@ func (m *Pipelines) gpgSecretKey(ctx context.Context, dotenvEncryptedEnvFile *da
 	return dag.SetSecret("GPG_SECRET_KEY", key)
 }
 
-// have a remote GPG Agent running and available as a service
-func (m *Pipelines) GpgAgentService(ctx context.Context) *dagger.Service {
-	return dag.Container().From("alpine:3.21").
-		WithExec([]string{"apk", "add", "gnupg", "openssh"}).
-		WithExec([]string{"ssh-keygen", "-t", "rsa", "-f", "/etc/ssh/ssh_host_rsa_key"}).
-		WithExposedPort(22).AsService(dagger.ContainerAsServiceOpts{Args: []string{"/usr/sbin/sshd", "-D"}})
-}
-
 func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, dotenvKey *dagger.Secret) (int, error) {
 	sourceWithoutBin := source.WithoutDirectory("bin").WithoutDirectory("dist")
 	gpgKey := m.gpgSecretKey(ctx, source.File(".env"), dotenvKey)
