@@ -17,15 +17,15 @@ builds:
     ldflags:
       - "-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}"
     goos:
-      - freebsd
-      - windows
+      # - freebsd
+      # - windows
       - linux
-      - darwin
+      # - darwin
     goarch:
       - amd64
-      - "386"
-      - arm
-      - arm64
+      # - "386"
+      # - arm
+      # - arm64
     ignore:
       - goos: darwin
         goarch: "386"
@@ -47,7 +47,7 @@ signs:
       # need to pass the batch flag to indicate its not interactive.
       - "--batch"
       - "--local-user"
-      - "{{ .Env.GPG_FINGERPRINT }}" # set this environment variable for your signing key
+      - --default-key
       - "--output"
       - "${signature}"
       - "--detach-sign"
