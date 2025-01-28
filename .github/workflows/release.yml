@@ -18,12 +18,12 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.22.7
+          go-version: 1.23
 
       - name: Run goreleaser
         uses: dagger/dagger-for-github@v6
         with:
-          version: "0.14.0"
+          version: "0.15.2"
           module: infra/pipelines
           args: release --source ./. --dotenv-key env:DOTENV_PRIVATE_KEY
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
