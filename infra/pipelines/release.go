@@ -82,8 +82,8 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 
 		// Import the GPG key
 		WithMountedSecret("/keys/release-signing-key.asc", gpgKey).
-		WithExec([]string{"gpg", "--batch", "--import", "/keys/release-signing-key.asc"}).
-		WithExec([]string{"rm", "/root/.gnupg/*.lock"}).
+		WithExec([]string{"gpg2", "--import", "/keys/release-signing-key.asc"}).
+		WithExec([]string{"rm", "/root/.gnupg/public-keys.d/pubring.db.lock"}).
 
 		// mount source and run goreleaser
 		WithDirectory("/source", sourceWithoutBin).
