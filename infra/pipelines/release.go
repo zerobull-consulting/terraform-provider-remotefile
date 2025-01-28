@@ -65,13 +65,11 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 	sourceWithoutBin := source.WithoutDirectory("bin").WithoutDirectory("dist")
 	gpgKey := m.gpgSecretKey(ctx, source.File(".env"), dotenvKey)
 
-	gpgService := m.GpgAgentService(ctx)
-
 	return dag.Container().
 		From("golang:1.23-alpine").
 
 		// install git
-		WithExec([]string{"apk", "add", "git", "gpg"}).
+		WithExec([]string{"apk", "add", "git", "gpg", "gpg-agent"}).
 
 		// use dotenvx to read encrypted sensitive variables like GPG keys
 		WithFile("/usr/local/bin/dotenvx", m.dotenvxBinary()).
@@ -81,9 +79,6 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 
 		// set the dotenv private key (needed to decrypt .env file)
 		WithSecretVariable("DOTENV_PRIVATE_KEY", dotenvKey).
-
-		// add a service for the GPG agent
-		WithServiceBinding("gpg-agent", gpgService).
 
 		// Import the GPG key
 		WithMountedSecret("/keys/release-signing-key.asc", gpgKey).
