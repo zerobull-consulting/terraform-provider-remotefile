@@ -29,6 +29,13 @@ modules-dev/
 .DS_Store
 .idea
 
+# ignore dagger internal files
+infra/pipelines/internal
+
+# ignore dotenv key files
+.env.keys
+env.keys
+
 # Test exclusions
 !command/test-fixtures/**/*.tfstate
 !command/test-fixtures/**/.terraform/
