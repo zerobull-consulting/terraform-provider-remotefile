@@ -53,9 +53,20 @@ func (m *Pipelines) gpgSecretKey(ctx context.Context, dotenvEncryptedEnvFile *da
 	return dag.SetSecret("GPG_SECRET_KEY", key)
 }
 
+// have a remote GPG Agent running and available as a service
+func (m *Pipelines) GpgAgentService(ctx context.Context) *dagger.Service {
+	container := dag.Container().From("alpine:3.21").WithExec([]string{"apk", "add", "gnupg", "openssh"}).WithEntrypoint(
+		[]string{"/usr/sbin/sshd", "-D"},
+	).WithExposedPort(22)
+
+	return container.AsService()
+}
+
 func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, dotenvKey *dagger.Secret) (int, error) {
 	sourceWithoutBin := source.WithoutDirectory("bin").WithoutDirectory("dist")
 	gpgKey := m.gpgSecretKey(ctx, source.File(".env"), dotenvKey)
+
+	gpgService := m.GpgAgentService(ctx)
 
 	return dag.Container().
 		From("golang:1.23-alpine").
@@ -72,9 +83,13 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 		// set the dotenv private key (needed to decrypt .env file)
 		WithSecretVariable("DOTENV_PRIVATE_KEY", dotenvKey).
 
-		// import the GPG key
+		// add a service for the GPG agent
+		WithServiceBinding("gpg-agent", gpgService).
+		WithFile("/root/.ssh/config", source.File("id_rsa")).
+
+		// Import the GPG key
 		WithMountedSecret("/keys/release-signing-key.asc", gpgKey).
-		WithExec([]string{"gpg", "--import", "/keys/release-signing-key.asc"}).
+		WithExec([]string{"gpg", "--batch", "--import", "/keys/release-signing-key.asc"}).
 
 		// mount source and run goreleaser
 		WithDirectory("/source", sourceWithoutBin).
