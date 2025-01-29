@@ -35,27 +35,8 @@ func (m *Pipelines) goreleaserBinary() *dagger.File {
 	return dag.Container().From(goreleaserImage).File("/usr/bin/goreleaser")
 }
 
-func (m *Pipelines) gpgSecretKey(ctx context.Context, dotenvEncryptedEnvFile *dagger.File, dotenvKey *dagger.Secret) *dagger.Secret {
-	// need to run dotenvx and capture the output as a secret
-
-	// for time-savings we use the same image as the dotenv binary
-	key, err := dag.Container().From(dotenvImage).
-		WithWorkdir("/source").
-		WithFile("/source/.env", dotenvEncryptedEnvFile).
-		WithSecretVariable("DOTENV_PRIVATE_KEY", dotenvKey).
-		WithExec([]string{"dotenvx", "get", "GPG_SECRET_KEY"}).
-		Stdout(ctx)
-
-	if err != nil {
-		panic(err)
-	}
-
-	return dag.SetSecret("GPG_SECRET_KEY", key)
-}
-
-func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, dotenvKey *dagger.Secret) (int, error) {
+func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, dotenvKey *dagger.Secret) (string, error) {
 	sourceWithoutBin := source.WithoutDirectory("bin").WithoutDirectory("dist")
-	gpgKey := m.gpgSecretKey(ctx, source.File(".env"), dotenvKey)
 
 	return dag.Container().
 		From("golang:1.23-alpine").
@@ -72,14 +53,22 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 		// set the dotenv private key (needed to decrypt .env file)
 		WithSecretVariable("DOTENV_PRIVATE_KEY", dotenvKey).
 
-		// Import the GPG key
-		WithMountedSecret("/keys/release-signing-key.asc", gpgKey).
-		WithExec([]string{"gpg2", "--import", "/keys/release-signing-key.asc"}).
-		WithExec([]string{"rm", "/root/.gnupg/public-keys.d/pubring.db.lock"}).
-
-		// mount source and run goreleaser
+		// copy source code
 		WithDirectory("/source", sourceWithoutBin).
 		WithWorkdir("/source").
+
+		// Import the GPG key
+		// write the GPG key to a file first
+		WithExec([]string{"dotenvx", "get", "GPG_SECRET_KEY"}, dagger.ContainerWithExecOpts{
+			RedirectStdout: "/tmp/secret.key",
+		}).
+		// import the key
+		WithExec([]string{"gpg2", "--import", "/tmp/secret.key"}).
+		// and remove the lock file in case gpg2 or gpg-agent didn't clean up properly
+		// you may receive "database_open" errors otherwise
+		WithExec([]string{"rm", "/root/.gnupg/public-keys.d/pubring.db.lock"}).
+
+		// run goreleaser
 		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "release"}).
-		ExitCode(ctx)
+		Stdout(ctx)
 }

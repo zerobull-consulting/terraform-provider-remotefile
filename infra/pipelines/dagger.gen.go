@@ -166,13 +166,6 @@ func invoke(ctx context.Context, parentJSON []byte, parentName string, fnName st
 	switch parentName {
 	case "Pipelines":
 		switch fnName {
-		case "GpgAgentService":
-			var parent Pipelines
-			err = json.Unmarshal(parentJSON, &parent)
-			if err != nil {
-				panic(fmt.Errorf("%s: %w", "failed to unmarshal parent object", err))
-			}
-			return (*Pipelines).GpgAgentService(&parent, ctx), nil
 		case "Release":
 			var parent Pipelines
 			err = json.Unmarshal(parentJSON, &parent)
@@ -203,16 +196,11 @@ func invoke(ctx context.Context, parentJSON []byte, parentName string, fnName st
 			WithObject(
 				dag.TypeDef().WithObject("Pipelines", dagger.TypeDefWithObjectOpts{SourceMap: dag.SourceMap("release.go", 22, 6)}).
 					WithFunction(
-						dag.Function("GpgAgentService",
-							dag.TypeDef().WithObject("Service")).
-							WithDescription("have a remote GPG Agent running and available as a service").
-							WithSourceMap(dag.SourceMap("release.go", 57, 1))).
-					WithFunction(
 						dag.Function("Release",
 							dag.TypeDef().WithKind(dagger.TypeDefKindIntegerKind)).
-							WithSourceMap(dag.SourceMap("release.go", 64, 1)).
-							WithArg("source", dag.TypeDef().WithObject("Directory"), dagger.FunctionWithArgOpts{SourceMap: dag.SourceMap("release.go", 64, 50)}).
-							WithArg("dotenvKey", dag.TypeDef().WithObject("Secret"), dagger.FunctionWithArgOpts{SourceMap: dag.SourceMap("release.go", 64, 76)}))), nil
+							WithSourceMap(dag.SourceMap("release.go", 38, 1)).
+							WithArg("source", dag.TypeDef().WithObject("Directory"), dagger.FunctionWithArgOpts{SourceMap: dag.SourceMap("release.go", 38, 50)}).
+							WithArg("dotenvKey", dag.TypeDef().WithObject("Secret"), dagger.FunctionWithArgOpts{SourceMap: dag.SourceMap("release.go", 38, 76)}))), nil
 	default:
 		return nil, fmt.Errorf("unknown object %s", parentName)
 	}
