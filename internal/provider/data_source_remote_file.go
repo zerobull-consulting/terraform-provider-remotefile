@@ -9,10 +9,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/zerobull-consulting/terraform-provider-sftp/internal/provider/model"
-	"github.com/zerobull-consulting/terraform-provider-sftp/internal/provider/retry"
-	"github.com/zerobull-consulting/terraform-provider-sftp/internal/provider/sftp/connect"
-	"github.com/zerobull-consulting/terraform-provider-sftp/internal/provider/sftp/parameters"
+	"github.com/zerobull-consulting/terraform-provider-remote-sftp/internal/provider/model"
+	"github.com/zerobull-consulting/terraform-provider-remote-sftp/internal/provider/retry"
+	"github.com/zerobull-consulting/terraform-provider-remote-sftp/internal/provider/sftp/connect"
+	"github.com/zerobull-consulting/terraform-provider-remote-sftp/internal/provider/sftp/parameters"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
