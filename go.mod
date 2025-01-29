@@ -1,4 +1,4 @@
-module github.com/zerobull-consulting/terraform-provider-sftp
+module github.com/zerobull-consulting/terraform-provider-remote-sftp
 
 go 1.22.7
 

@@ -10,7 +10,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/zerobull-consulting/terraform-provider-sftp/internal/provider"
+	"github.com/zerobull-consulting/terraform-provider-remote-sftp/internal/provider"
 )
 
 func main() {
@@ -20,11 +20,11 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "zerobull-consulting/terraform-provider-sftp",
+		Address: "zerobull-consulting/terraform-provider-remote-sftp",
 		Debug:   debug,
 	}
 
-	err := providerserver.Serve(context.Background(), provider.New("0.2.0"), opts)
+	err := providerserver.Serve(context.Background(), provider.New("0.2.5"), opts)
 
 	if err != nil {
 		log.Fatal(err.Error())
