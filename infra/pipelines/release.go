@@ -57,13 +57,8 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 		WithDirectory("/source", sourceWithoutBin).
 		WithWorkdir("/source").
 
-		// Import the GPG key
-		// write the GPG key to a file first
-		WithExec([]string{"dotenvx", "get", "GPG_SECRET_KEY"}, dagger.ContainerWithExecOpts{
-			RedirectStdout: "/tmp/secret.key",
-		}).
 		// import the key
-		WithExec([]string{"gpg2", "--import", "/tmp/secret.key"}).
+		WithExec([]string{"sh", "-c", "dotenvx get GPG_SECRET_KEY | gpg2 --import"}).
 		// and remove the lock file in case gpg2 or gpg-agent didn't clean up properly
 		// you may receive "database_open" errors otherwise
 		WithExec([]string{"rm", "/root/.gnupg/public-keys.d/pubring.db.lock"}).
