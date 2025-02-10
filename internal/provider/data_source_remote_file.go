@@ -9,10 +9,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
-	"github.com/zerobull-consulting/terraform-provider-remote-sftp/internal/provider/model"
-	"github.com/zerobull-consulting/terraform-provider-remote-sftp/internal/provider/retry"
-	"github.com/zerobull-consulting/terraform-provider-remote-sftp/internal/provider/sftp/connect"
-	"github.com/zerobull-consulting/terraform-provider-remote-sftp/internal/provider/sftp/parameters"
+	"github.com/zerobull-consulting/terraform-provider-remotefile/internal/provider/model"
+	"github.com/zerobull-consulting/terraform-provider-remotefile/internal/provider/retry"
+	"github.com/zerobull-consulting/terraform-provider-remotefile/internal/provider/sftp/connect"
+	"github.com/zerobull-consulting/terraform-provider-remotefile/internal/provider/sftp/parameters"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -30,7 +30,7 @@ type remoteFileDataSource struct{}
 
 // Metadata returns the data source type name.
 func (d *remoteFileDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = "sftp_remote_file"
+	resp.TypeName = "remotefile_sftp_contents"
 }
 
 // Schema defines the schema for the data source.
