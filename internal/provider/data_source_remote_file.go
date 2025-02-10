@@ -30,7 +30,7 @@ type remoteFileDataSource struct{}
 
 // Metadata returns the data source type name.
 func (d *remoteFileDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = "remotefile_sftp_contents"
+	resp.TypeName = "remotefile_sftp"
 }
 
 // Schema defines the schema for the data source.
