@@ -20,11 +20,11 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "zerobull-consulting/terraform-provider-remotefile",
+		Address: "zerobull-consulting/terraform-provider-remotefile/remotefile",
 		Debug:   debug,
 	}
 
-	err := providerserver.Serve(context.Background(), provider.New("0.2.6"), opts)
+	err := providerserver.Serve(context.Background(), provider.New("0.2.7"), opts)
 
 	if err != nil {
 		log.Fatal(err.Error())

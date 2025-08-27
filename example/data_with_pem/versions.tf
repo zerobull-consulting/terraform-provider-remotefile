@@ -1,7 +1,7 @@
 terraform {
   required_providers {
-    sftp = {
-      source  = "danitso/sftp"
+    remotefile = {
+      source  = "zerobull-consulting/remotefile"
     }
     tls = {
       source  = "hashicorp/tls"
