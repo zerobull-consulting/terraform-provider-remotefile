@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -39,7 +40,7 @@ func (r *remoteFileResource) Configure(_ context.Context, req resource.Configure
 
 // Metadata returns the resource type name
 func (r *remoteFileResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_sftp_file"
+	resp.TypeName = req.ProviderTypeName + "_sftp"
 }
 
 // Schema defines the schema for the resource
@@ -168,7 +169,7 @@ func (r *remoteFileResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 
 	// Generate an ID for the resource
-	data.Id = types.StringValue(fmt.Sprintf("%s:%s", data.Host.ValueString(), data.Path.ValueString()))
+	data.ID = types.StringValue(fmt.Sprintf("%s:%s", data.Host.ValueString(), data.Path.ValueString()))
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -357,9 +358,9 @@ func (r *remoteFileResource) ImportState(ctx context.Context, req resource.Impor
 	}
 
 	host := parts[0]
-	path := parts[1]
+	filePath := parts[1]
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("host"), host)...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("path"), path)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("path"), filePath)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), req.ID)...)
 }

@@ -10,6 +10,7 @@ type RemoteFileDataSourceModel struct {
 	LastModified  types.String `tfsdk:"last_modified"`
 	Password      types.String `tfsdk:"password"`
 	Path          types.String `tfsdk:"path"`
+	Permissions   types.String `tfsdk:"permissions"`
 	Port          types.Int64  `tfsdk:"port"`
 	PrivateKey    types.String `tfsdk:"private_key"`
 	Size          types.Int64  `tfsdk:"size"`
@@ -28,6 +29,7 @@ func (r *RemoteFileDataSourceModel) GetHostKey() types.String       { return r.H
 func (r *RemoteFileDataSourceModel) GetLastModified() types.String  { return r.LastModified }
 func (r *RemoteFileDataSourceModel) GetPassword() types.String      { return r.Password }
 func (r *RemoteFileDataSourceModel) GetPath() types.String          { return r.Path }
+func (r *RemoteFileDataSourceModel) GetPermissions() types.String   { return r.Permissions }
 func (r *RemoteFileDataSourceModel) GetPort() types.Int64           { return r.Port }
 func (r *RemoteFileDataSourceModel) GetPrivateKey() types.String    { return r.PrivateKey }
 func (r *RemoteFileDataSourceModel) GetSize() types.Int64           { return r.Size }
