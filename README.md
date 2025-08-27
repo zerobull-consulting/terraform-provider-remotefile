@@ -2,8 +2,16 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/danitso/terraform-provider-sftp)](https://goreportcard.com/report/github.com/danitso/terraform-provider-sftp)
 [![GoDoc](https://godoc.org/github.com/danitso/terraform-provider-sftp?status.svg)](http://godoc.org/github.com/danitso/terraform-provider-sftp)
 
-# Terraform Provider for SFTP
-A Terraform Provider which adds additional SFTP functionality.
+# Terraform Provider for Remote Files
+A Terraform Provider which allows reading of files located on a remote machine, 
+using the SFTP protocol over SSH.
+
+A data source (remotefile_sftp) is provided that connects to an SSH daemon and 
+reads the content of the file.
+
+Under the hood, Go's standard SFTP and SSH packages are used to read the 
+contents of the remote file, and respond appropriately to network errors or 
+other conditions.
 
 ## Requirements
 
