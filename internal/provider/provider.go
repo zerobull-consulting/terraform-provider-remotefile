@@ -33,7 +33,7 @@ type sftpProvider struct {
 
 // Metadata returns the provider type name.
 func (p *sftpProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "sftp"
+	resp.TypeName = "remotefile"
 	resp.Version = p.version
 }
 
