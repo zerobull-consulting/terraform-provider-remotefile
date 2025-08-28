@@ -28,7 +28,7 @@ func (m *Pipelines) dotenvxBinary() *dagger.File {
 	return dag.Container().From(dotenvImage).File("/usr/local/bin/dotenvx")
 }
 
-var goreleaserVersionTag = "v2.6.1"
+var goreleaserVersionTag = "v2.11.2"
 
 func (m *Pipelines) goreleaserBinary() *dagger.File {
 	goreleaserImage := "goreleaser/goreleaser:" + goreleaserVersionTag

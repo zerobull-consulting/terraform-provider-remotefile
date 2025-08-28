@@ -45,6 +45,7 @@ signs:
     args:
       - "--batch"
       - "--no-tty"
+      - "--yes"
       - "--pinentry-mode"
       - "loopback"
       - "--local-user"
