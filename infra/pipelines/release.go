@@ -63,16 +63,18 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 		WithExec([]string{"sh", "-c", "echo 'pinentry-mode loopback' >> /root/.gnupg/gpg.conf"}).
 		WithExec([]string{"sh", "-c", "echo 'allow-loopback-pinentry' >> /root/.gnupg/gpg-agent.conf"}).
 		WithExec([]string{"sh", "-c", "echo 'no-tty' >> /root/.gnupg/gpg.conf"}).
+		WithExec([]string{"sh", "-c", "echo 'batch' >> /root/.gnupg/gpg.conf"}).
 		
-		// import the key
-		WithExec([]string{"sh", "-c", "dotenvx get GPG_SECRET_KEY | gpg2 --import --batch"}).
+		// Import the key (no passphrase needed)
+		WithExec([]string{"sh", "-c", "dotenvx get GPG_SECRET_KEY | gpg2 --batch --import"}).
+		
 		// and remove the lock file in case gpg2 or gpg-agent didn't clean up properly
-		// you may receive "database_open" errors otherwise
 		WithExec([]string{"rm", "-f", "/root/.gnupg/public-keys.d/pubring.db.lock"}).
 		WithExec([]string{"gpgconf", "--kill", "gpg-agent"}).
 		WithExec([]string{"gpg-agent", "--daemon", "--allow-loopback-pinentry"}).
 
-		// run goreleaser
-		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "release"}).
+		// run goreleaser with additional environment variables
+		WithEnvVariable("GPG_TTY", "/dev/null"). // Set to /dev/null to explicitly disable TTY detection
+		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "release", "--debug"}).
 		Stdout(ctx)
 }
