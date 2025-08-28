@@ -58,12 +58,12 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 		WithWorkdir("/source").
 
 		// Set up GPG for non-interactive use
-		WithExec([]string{"mkdir", "-p", "/root/.gnupg"}).
-		WithExec([]string{"chmod", "700", "/root/.gnupg"}).
-		WithExec([]string{"sh", "-c", "echo 'pinentry-mode loopback' >> /root/.gnupg/gpg.conf"}).
-		WithExec([]string{"sh", "-c", "echo 'allow-loopback-pinentry' >> /root/.gnupg/gpg-agent.conf"}).
-		WithExec([]string{"sh", "-c", "echo 'no-tty' >> /root/.gnupg/gpg.conf"}).
-		WithExec([]string{"sh", "-c", "echo 'batch' >> /root/.gnupg/gpg.conf"}).
+		// WithExec([]string{"mkdir", "-p", "/root/.gnupg"}).
+		// WithExec([]string{"chmod", "700", "/root/.gnupg"}).
+		// WithExec([]string{"sh", "-c", "echo 'pinentry-mode loopback' >> /root/.gnupg/gpg.conf"}).
+		// WithExec([]string{"sh", "-c", "echo 'allow-loopback-pinentry' >> /root/.gnupg/gpg-agent.conf"}).
+		// WithExec([]string{"sh", "-c", "echo 'no-tty' >> /root/.gnupg/gpg.conf"}).
+		// WithExec([]string{"sh", "-c", "echo 'batch' >> /root/.gnupg/gpg.conf"}).
 		
 		// Import the key (no passphrase needed)
 		WithExec([]string{"sh", "-c", "dotenvx get GPG_SECRET_KEY | gpg2 --batch --import"}).
@@ -74,7 +74,7 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 		WithExec([]string{"gpg-agent", "--daemon", "--allow-loopback-pinentry"}).
 
 		// run goreleaser with additional environment variables
-		WithEnvVariable("GPG_TTY", "/dev/null"). // Set to /dev/null to explicitly disable TTY detection
-		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "release", "--debug"}).
+		// WithEnvVariable("GPG_TTY", "/dev/null"). // Set to /dev/null to explicitly disable TTY detection
+		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "release"}).
 		Stdout(ctx)
 }
