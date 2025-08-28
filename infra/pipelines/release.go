@@ -75,6 +75,6 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 
 		// run goreleaser with additional environment variables
 		// WithEnvVariable("GPG_TTY", "/dev/null"). // Set to /dev/null to explicitly disable TTY detection
-		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "release", "--skip-publishing"}).
+		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "release", "--skip=publish"}).
 		Stdout(ctx)
 }
