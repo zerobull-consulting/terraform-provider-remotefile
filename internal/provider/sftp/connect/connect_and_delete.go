@@ -23,9 +23,8 @@ func IsFileNotFound(err error) bool {
 	
 	// Check for os.IsNotExist or look for common error messages
 	return os.IsNotExist(err) || 
-		   (err.Error() != "" && 
-		   (contains(err.Error(), "no such file") || 
-		   contains(err.Error(), "file does not exist")))
+		   contains(err.Error(), "no such file") || 
+		   contains(err.Error(), "file does not exist")
 }
 
 // Helper function to check if a string contains a substring
