@@ -28,7 +28,7 @@ func (m *Pipelines) dotenvxBinary() *dagger.File {
 	return dag.Container().From(dotenvImage).File("/usr/local/bin/dotenvx")
 }
 
-var goreleaserVersionTag = "v2.6.1"
+var goreleaserVersionTag = "v2.11.2"
 
 func (m *Pipelines) goreleaserBinary() *dagger.File {
 	goreleaserImage := "goreleaser/goreleaser:" + goreleaserVersionTag
@@ -41,8 +41,8 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 	return dag.Container().
 		From("golang:1.23-alpine").
 
-		// install git
-		WithExec([]string{"apk", "add", "git", "gpg", "gpg-agent"}).
+		// install git and gpg
+		WithExec([]string{"apk", "add", "git", "gpg", "gpg-agent", "gnupg"}).
 
 		// use dotenvx to read encrypted sensitive variables like GPG keys
 		WithFile("/usr/local/bin/dotenvx", m.dotenvxBinary()).
@@ -56,14 +56,14 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 		// copy source code
 		WithDirectory("/source", sourceWithoutBin).
 		WithWorkdir("/source").
-
-		// import the key
-		WithExec([]string{"sh", "-c", "dotenvx get GPG_SECRET_KEY | gpg2 --import --batch"}).
+		
+		// Import the key
+		WithExec([]string{"sh", "-c", "dotenvx get GPG_SECRET_KEY | gpg2 --batch --import"}).
+		
 		// and remove the lock file in case gpg2 or gpg-agent didn't clean up properly
-		// you may receive "database_open" errors otherwise
-		WithExec([]string{"rm", "/root/.gnupg/public-keys.d/pubring.db.lock"}).
+		WithExec([]string{"rm", "-f", "/root/.gnupg/public-keys.d/pubring.db.lock"}).
 
-		// run goreleaser
+		// run goreleaser with additional environment variables
 		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "release"}).
 		Stdout(ctx)
 }
