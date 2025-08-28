@@ -70,11 +70,11 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 		
 		// and remove the lock file in case gpg2 or gpg-agent didn't clean up properly
 		WithExec([]string{"rm", "-f", "/root/.gnupg/public-keys.d/pubring.db.lock"}).
-		WithExec([]string{"gpgconf", "--kill", "gpg-agent"}).
-		WithExec([]string{"gpg-agent", "--daemon", "--allow-loopback-pinentry"}).
+		// WithExec([]string{"gpgconf", "--kill", "gpg-agent"}).
+		// WithExec([]string{"gpg-agent", "--daemon", "--allow-loopback-pinentry"}).
 
 		// run goreleaser with additional environment variables
 		// WithEnvVariable("GPG_TTY", "/dev/null"). // Set to /dev/null to explicitly disable TTY detection
-		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "release"}).
+		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "release", "--skip-publishing"}).
 		Stdout(ctx)
 }
