@@ -28,6 +28,7 @@ func IsFileNotFound(err error) bool {
 }
 
 // Helper function to check if a string contains a substring
+func contains(s string, substr string) bool {
 	return strings.Contains(strings.ToLower(s), substr)
 }
 
