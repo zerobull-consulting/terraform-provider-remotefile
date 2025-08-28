@@ -28,8 +28,7 @@ func IsFileNotFound(err error) bool {
 }
 
 // Helper function to check if a string contains a substring
-func contains(s string, substr string) bool {
-	return s != "" && strings.Contains(strings.ToLower(s), substr)
+	return strings.Contains(strings.ToLower(s), substr)
 }
 
 // ConnectAndDelete creates an operation to delete a file from a remote server
