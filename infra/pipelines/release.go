@@ -41,7 +41,7 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 	return dag.Container().
 		From("golang:1.23-alpine").
 
-		// install git
+		// install git and gpg
 		WithExec([]string{"apk", "add", "git", "gpg", "gpg-agent", "gnupg"}).
 
 		// use dotenvx to read encrypted sensitive variables like GPG keys
