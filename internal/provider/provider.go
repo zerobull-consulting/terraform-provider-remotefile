@@ -55,5 +55,7 @@ func (p *sftpProvider) DataSources(_ context.Context) []func() datasource.DataSo
 
 // Resources defines the resources implemented in the provider.
 func (p *sftpProvider) Resources(_ context.Context) []func() resource.Resource {
-	return nil
+	return []func() resource.Resource{
+		NewRemoteFileResource,
+	}
 }

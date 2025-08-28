@@ -1,6 +1,6 @@
 provider_installation {
   dev_overrides {
-    "hashicorp/null" = "/home/developer/tmp/terraform-null"
+    "zerobull-consulting/remotefile" = "/home/developer/go/bin"
   }
 
   direct {}

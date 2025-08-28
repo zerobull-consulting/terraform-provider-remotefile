@@ -1,4 +1,4 @@
-data "sftp_remote_file" "retrieve_etc_hostname" {
+data "remotefile_sftp" "retrieve_etc_hostname" {
   host        = "your.hostname.tld"
   user        = "default"
   private_key = tls_private_key.sftp.private_key_pem
@@ -11,5 +11,5 @@ resource "tls_private_key" "sftp" {
 }
 
 output "hostname" {
-  value = trimspace(data.sftp_remote_file.retrieve_etc_hostname.contents)
+  value = trimspace(data.remotefile_sftp.retrieve_etc_hostname.contents)
 }
