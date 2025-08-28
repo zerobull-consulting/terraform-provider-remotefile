@@ -42,7 +42,7 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 		From("golang:1.23-alpine").
 
 		// install git
-		WithExec([]string{"apk", "add", "git", "gpg", "gpg-agent"}).
+		WithExec([]string{"apk", "add", "git", "gpg", "gpg-agent", "gnupg"}).
 
 		// use dotenvx to read encrypted sensitive variables like GPG keys
 		WithFile("/usr/local/bin/dotenvx", m.dotenvxBinary()).
@@ -57,11 +57,20 @@ func (m *Pipelines) Release(ctx context.Context, source *dagger.Directory, doten
 		WithDirectory("/source", sourceWithoutBin).
 		WithWorkdir("/source").
 
+		// Set up GPG for non-interactive use
+		WithExec([]string{"mkdir", "-p", "/root/.gnupg"}).
+		WithExec([]string{"chmod", "700", "/root/.gnupg"}).
+		WithExec([]string{"sh", "-c", "echo 'pinentry-mode loopback' >> /root/.gnupg/gpg.conf"}).
+		WithExec([]string{"sh", "-c", "echo 'allow-loopback-pinentry' >> /root/.gnupg/gpg-agent.conf"}).
+		WithExec([]string{"sh", "-c", "echo 'no-tty' >> /root/.gnupg/gpg.conf"}).
+		
 		// import the key
 		WithExec([]string{"sh", "-c", "dotenvx get GPG_SECRET_KEY | gpg2 --import --batch"}).
 		// and remove the lock file in case gpg2 or gpg-agent didn't clean up properly
 		// you may receive "database_open" errors otherwise
-		WithExec([]string{"rm", "/root/.gnupg/public-keys.d/pubring.db.lock"}).
+		WithExec([]string{"rm", "-f", "/root/.gnupg/public-keys.d/pubring.db.lock"}).
+		WithExec([]string{"gpgconf", "--kill", "gpg-agent"}).
+		WithExec([]string{"gpg-agent", "--daemon", "--allow-loopback-pinentry"}).
 
 		// run goreleaser
 		WithExec([]string{"dotenvx", "run", "-f", ".env", "--", "goreleaser", "release"}).
