@@ -20,7 +20,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "zerobull-consulting/terraform-provider-remotefile/remotefile",
+		Address: "registry.terraform.io/zerobull-consulting/remotefile",
 		Debug:   debug,
 	}
 
