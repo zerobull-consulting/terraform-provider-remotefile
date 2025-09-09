@@ -48,6 +48,10 @@ func (r *remoteFileResource) Schema(_ context.Context, _ resource.SchemaRequest,
 	resp.Schema = schema.Schema{
 		Description: "Manages a file on a remote system using SFTP.",
 		Attributes: map[string]schema.Attribute{
+			"allow_missing": schema.BoolAttribute{
+				Description: "If true, missing remote files will not cause an error",
+				Optional:    true,
+			},
 			"contents": schema.StringAttribute{
 				Description: "The file contents",
 				Required:    true,
@@ -97,6 +101,11 @@ func (r *remoteFileResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			"timeout": schema.StringAttribute{
 				Description: "The connect timeout",
 				Optional:    true,
+			},
+			"triggers": schema.MapAttribute{
+				Description: "A map of arbitrary strings that, when changed, will force the file to be updated",
+				Optional:    true,
+				ElementType: types.StringType,
 			},
 			"user": schema.StringAttribute{
 				Description: "The username",
